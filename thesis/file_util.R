@@ -2,8 +2,12 @@ require(dplyr)
 require(stringr)
 require(tm)
 require(jiebaR)
+require(wordcloud)
+
 #universal jiebaR cutter for all text splitting purpose
 jcutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
+#universal Chinese stopwords for all text splitting purpose
+stopwordCN<-readLines("/Users//Luis//Documents//data//stopwordcn.txt",encoding = "UTF-8",skipNul = T,warn = F)
 
 #----------------helper----------------------
 #function to extract firm year info
@@ -126,4 +130,37 @@ f_reader<-function(files) {
   return(tbl_df(df_fs))
 }
 
+#------------text mining--------------------
+#define a list or vector as VectorSource corpus
+fm_tdm<-function(list_chr){
+  if(class(list_chr)=="list") list_chr<-unlist(list_chr)
+  f1<-VectorSource(list_chr) %>%
+    Corpus %>%
+    tm_map(removeWords,stopwordCN)
+  
+  #generate term document matrix
+  tdm <-TermDocumentMatrix(f1)
+  tdm<-removeSparseTerms(tdm,0.9999)
+  return(tdm)
+}  
 
+#Kmeans cluster analysis
+fm_cluster<-function(tdm,ngroup=5){
+  tdm_matrix <- t(as.matrix(tdm))
+  km <- kmeans(tdm_matrix , ngroup)
+  return(km)
+}
+
+#function wrapper for wordcloud generating
+fm_wc<-function(tdm){
+  #use Heiti fonts to let mac system work for Chinese characters
+  par(family = "STHeiti")
+  
+  #generate tdm and sort
+  m1<-as.matrix(tdm)
+  m1 <- sort(rowSums(m1),decreasing=TRUE)
+  m1<-data.frame(word = names(m1),freq=m1)
+  
+  wordcloud(m1$word,m1$freq, max.words=80, scale=c(1.5,0.5),
+            random.order=FALSE,rot.per=0.5, use.r.layout=T,colors=brewer.pal(8,"Dark2")) 
+}
