@@ -1,8 +1,9 @@
 require(dplyr)
-require(plyr)
 require(stringr)
 require(tm)
 require(jiebaR)
+#universal jiebaR cutter for all text splitting purpose
+jcutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
 
 #----------------helper----------------------
 #function to extract firm year info
@@ -34,9 +35,8 @@ f_hasword<-function(keywords,strVector) {
 }
 
 #word cutter wrapper
-jcut <- function(str="") {
-  #初始化jeibaR的分词器，并设定工作目录
-  cutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
+jcut <- function(str="",cutter) {
+  
   ftmp <- cutter<=str
   ftmp<-paste(ftmp,collapse = " ")
   return(ftmp)
@@ -45,7 +45,7 @@ jcut <- function(str="") {
 #fucntion to do word split
 f_split<-function(str) {
   
-  chars <-sapply(str,jcut,USE.NAMES = F)
+  chars <-sapply(str,jcut,cutter=jcutter,USE.NAMES = F)
   return(chars)
 
 }
@@ -112,7 +112,7 @@ f_reader<-function(files) {
   #用一个df容纳所有的公司和年度信息
   corp<-sapply(files,substr,1,6,USE.NAMES = F)
   year<-sapply(files,substr,8,11,USE.NAMES = F)
-  df_fs<-data.frame(corp,year)      
+  df_fs<-data_frame(corp,year)      
   #批量读入文本
   for(i in 1:n_fl){
     tmp<-scan(file=files[i],what=character(),encoding = "UTF-8",skipNul=T) %>%
