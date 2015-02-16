@@ -1,6 +1,8 @@
 require(dplyr)
 require(plyr)
 require(stringr)
+require(tm)
+require(jiebaR)
 
 #----------------helper----------------------
 #function to extract firm year info
@@ -17,6 +19,7 @@ f_id2str<-function(firmid){
   return(tmp)
 }
 
+#fucntion to find if there is any word match, keywords is a char vector
 f_hasword<-function(keywords,strVector) {
   nk<-length(keywords)
   ns<-length(strVector)
@@ -30,7 +33,22 @@ f_hasword<-function(keywords,strVector) {
   return(ncount)
 }
 
+#word cutter wrapper
+jcut <- function(str="") {
+  #初始化jeibaR的分词器，并设定工作目录
+  cutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
+  ftmp <- cutter<=str
+  ftmp<-paste(ftmp,collapse = " ")
+  return(ftmp)
+}
 
+#fucntion to do word split
+f_split<-function(str) {
+  
+  chars <-sapply(str,jcut,USE.NAMES = F)
+  return(chars)
+
+}
 
 
 #---------------------enum file names-----------------------
