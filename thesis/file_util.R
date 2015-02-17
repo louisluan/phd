@@ -1,3 +1,16 @@
+#forewords: all following codes are tested with Mac version of R 3.12
+#Due to the problematic unicode character encoding in Windows
+#All Chinese text analyses tasks are suggested to perform under Mac or Linux
+#Mac is an ideal platform cause the packages are readily available 
+#Under Linux many r packages need to be compiled by yourself
+
+
+#set RStudio encoding to UTF-8
+#my Sys.getlocale() results:"en_US.UTF-8/...." no need to set to zh_CN.UTF-8
+#if the raw text is encoded other than UTF-8
+#Access Mac Appstore and download a free program called "汉字编码转换"
+#This app can do encoding convertion in batch mode
+
 require(dplyr)
 require(stringr)
 require(tm)
