@@ -19,8 +19,6 @@ require(wordcloud)
 
 #universal jiebaR cutter for all text splitting purpose
 jcutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
-#universal Chinese stopwords for all text splitting purpose
-stopwordCN<-readLines("/Users//Luis//Documents//data//stopwordcn.txt",encoding = "UTF-8",skipNul = T,warn = F)
 
 #----------------helper----------------------
 #function to extract firm year info
@@ -69,6 +67,13 @@ f_split<-function(str) {
 
 
 #---------------------enum file names-----------------------
+#funtion wrapper for enumerate file names with specific extension 
+f_list_file<-function(f_path = ".",ext="txt"){
+  p<-paste("*.",ext,"$",sep="")
+  tmp<-list.files(path=f_path,recursive = F,pattern = p)
+  return(tmp)
+}
+
 #funtion wrapper for enumerate MD&A file names
 f_list_mgmt<-function(f_path = "."){
   tmp<-list.files(path=f_path,recursive = T,pattern = "*A\\d{4}\\.txt$")
@@ -119,10 +124,36 @@ f_list_culture<-function(f_path= "."){
   return(names) 
 }
 
+#------------read in CSMAR tab delim csv or txt file-----
+#batch version
+f_readtable_list<-function(files){
+  #初始化一个与文本文件总数量等长的空list
+  n_fl<-length(files)
+  lstname<-list()
+  length(lstname)<-n_fl
+  lstname<-strsplit(files,split = "[.]")
+  for(i in 1:n_fl)
+  {
+    oname <- lstname[[i]][1]
+    print(oname)
+    assign(oname, f_readtable(files[i]),envir=globalenv())
+  }
+}
+
+#single_version
+f_readtable<-function(file){
+
+  df<-read.table(file,header = T,sep="\t",stringsAsFactors = F) %>%
+    tbl_df()
+ 
+  return(df)
+}
+
+
 #-------------scan in text files------------------
 
 f_reader<-function(files) {
-  #初始化一个与文本数量等长的空list
+  #初始化一个与文本文件总数量等长的空list
   n_fl<-length(files)
   lst<-list()
   length(lst)<-n_fl 
@@ -146,6 +177,9 @@ f_reader<-function(files) {
 #------------text mining--------------------
 #define a list or vector as VectorSource corpus
 fm_tdm<-function(list_chr){
+  #Chinese stopwords for all text splitting purpose
+  stopwordCN<-readLines("/Users//Luis//Documents//data//stopwordcn.txt",encoding = "UTF-8",skipNul = T,warn = F)
+  
   if(class(list_chr)=="list") list_chr<-unlist(list_chr)
   f1<-VectorSource(list_chr) %>%
     Corpus %>%

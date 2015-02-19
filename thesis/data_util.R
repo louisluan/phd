@@ -1,5 +1,6 @@
 require(dplyr)
 require(lazyeval)
+require(stargazer)
 #dplyr包里的主要函数都有加_的版本，可以接受字符串参数
 #比如下面用的filter_, group_by_
 #这样就可以接受lazyeval变量，在执行时拼出来参数
@@ -57,3 +58,52 @@ p_summary<-function(df,id="corp",t="year"){
   #return(p)
 }
 
+#相关系数矩阵，下Pearson上Spearman
+corr<-function(x){
+  p_cor<-cor(x);
+  s_cor<-cor(x,method="spearman");
+  p_cor[upper.tri(p_cor)==TRUE]<-s_cor[upper.tri(s_cor)==TRUE];
+  return(p_cor);
+}
+
+#描述性统计输出
+o_descriptive<-function(...,head="Descriptive Statistics",file="./desc.htm"){
+  stargazer(...,
+            type="html",title=head,
+            out.header=TRUE,summary.logical=FALSE,
+            digits=2,median=TRUE,
+            out=file
+  )
+}
+
+#相关系数矩阵输出
+o_corr<-function(...,head="Correlations",file="./cor.htm"){
+  stargazer(...,
+            type="html",title=head,
+            out.header=TRUE,summary.logical=FALSE,
+            digits=2,median=TRUE,
+            out=file,
+            notes="Left:Pearson,Right:Spearman"
+  )
+}
+#回归结果输出
+o_reg<-function(...,head="Regression Result",ylab,ctrl,ctlab,file="./reg.htm"){
+  stargazer(...,type="html",title=head,
+            report="vc*p",digits=3,
+            dep.var.labels=vlab,
+            model.names=FALSE,model.numbers=TRUE,
+            header=FALSE,
+            omit=ctrl,omit.labels=ctlab,
+            flip=TRUE,out.header=TRUE,out=file)
+}
+ 
+#Winsorize函数，缩尾用
+winsor<-function(x,p=0.01) {
+  if(length(p) != 1 || p < 0 || p > 0.5) {
+    stop("bad p-value for winsorization")
+  }
+  lim <- quantile(x, probs=c(p, 1-p))
+  x[ x < lim[1] ] <- lim[1]
+  x[ x > lim[2] ] <- lim[2]
+  return(x)
+}
