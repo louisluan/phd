@@ -31,6 +31,8 @@ fl_strategy<-f_list_strategy()
 d_strategy<-f_reader(fl_strategy)
 d_strategy$year<-NULL
 d_strategy$txt<-NULL
+d_strategy$tlen<-NULL
+
 d_strategy$txtstrategy<-d_strategy$tlen>20
 
 
@@ -40,11 +42,16 @@ fl_culture<-f_list_culture()
 d_culture<-f_reader(fl_culture)
 d_culture$year<-NULL
 d_culture$txt<-NULL
+d_culture$tlen<-NULL
 d_culture$txtculture<-d_culture$tlen>5
 
-load("~/Documents/phd/thesis//MDA_ALL.RData")
-d_txt<-left_join(r_mgmt,d_csr) %>%
+load("~/Documents/phd/thesis//D_MGMT.RData")
+d_txt<-left_join(d_mgmt,d_csr) %>%
     left_join(d_ic) %>%
     left_join(d_strategy) %>%
-    left_join(d_culture)
+    left_join(d_culture) %>%
+    select(corp,year,sentiment,csrscore,icscore,txtstrategy,txtculture)
 
+d_txt[is.na(d_txt)]<-0
+
+save(d_txt,file="~/Documents/phd/thesis/COMBINED_TXT_ANAYSIS.RData")

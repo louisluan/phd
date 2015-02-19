@@ -89,5 +89,19 @@ r_mgmt<-select(tt_mgmt,corp,year,senti)
 r_mgmt<-bind_cols(r_mgmt[151:nobs,],ml_results)
 r_mgmt<-bind_rows(r_mgmt,tt_mgmt[1:150,])
 
+r_mgmt$txt<-NULL
+factor2int<-function(x){
+  tmp<-as.integer(x)-1
+  return(tmp)
+}
+
+tmp<-r_mgmt[,c("FORESTS_LABEL","SVM_LABEL","GLMNET_LABEL","MAXENTROPY_LABEL","LOGITBOOST_LABEL" )]
+tmp<-sapply(tmp,factor2int)
+sentiment<-rowSums(tmp)>0
+r_mgmt<-cbind(r_mgmt,sentiment)
+r_mgmt[!is.na(r_mgmt$senti),"sentiment"]<-r_mgmt[!is.na(r_mgmt$senti),"senti"]
+
+d_mgmt<-select(r_mgmt,corp,year,sentiment)
+save(d_mgmt,file="~/Documents/phd/thesis/D_MGMT.RData")
 save(r_mgmt,file="~/Documents/phd/thesis/MDA_ALL.RData")
 write.csv(r_mgmt,file="~/Documents/phd/thesis/MDA_ALL.csv")
