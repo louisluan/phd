@@ -151,6 +151,11 @@ f_readtable<-function(file){
 
 
 #-------------scan in text files------------------
+f_substr_test<-function(x,f,l){
+  tmp<-strsplit(x,"[.]")[[1]][1]
+  if(nchar(tmp)<11) return("9999")
+  substr(x,f,l)
+}
 
 f_reader<-function(files) {
   #初始化一个与文本文件总数量等长的空list
@@ -159,7 +164,8 @@ f_reader<-function(files) {
   length(lst)<-n_fl 
   #用一个df容纳所有的公司和年度信息
   corp<-sapply(files,substr,1,6,USE.NAMES = F)
-  year<-sapply(files,substr,8,11,USE.NAMES = F)
+  
+  year<-sapply(files,f_substr_test,8,11,USE.NAMES = F)
   df_fs<-data_frame(corp,year)      
   #批量读入文本
   for(i in 1:n_fl){
