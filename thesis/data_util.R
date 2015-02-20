@@ -45,12 +45,12 @@ p_summary<-function(df,id="corp",t="year"){
   #先排序，按照id分组，分别统计最小、最大时间值和每个id观测数量
   #然后再生成一个组合的字符变量pattern 小-大-长度
   #再次根据pattern分组，然后统计计算总数
-  p<-arrange_(df,.dots=list(id,t)) %>%
-    group_by_(.dots=list(id)) %>%
-    summarise_(.dots = setNames(dots, c("min_t","max_t","obs_t"))) %>%
-    mutate(pattern=paste(as.character(min_t),as.character(max_t),as.character(obs_t),sep="-")) %>%
+  p<-arrange_(df,.dots = list(id,t)) %>%
+    group_by_(.dots = list(id)) %>%
+    dplyr::summarise_(.dots = setNames(dots, c("min_t","max_t","obs_t"))) %>%
+    mutate(pattern = paste(as.character(min_t),as.character(max_t),as.character(obs_t),sep="-")) %>%
     group_by(pattern) %>%
-    summarise(style=n())
+    dplyr::summarise(style = n())
   
   
   #输出时间分布类型
