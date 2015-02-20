@@ -143,7 +143,7 @@ f_readtable_list<-function(files){
 #single_version
 f_readtable<-function(file){
 
-  df<-read.table(file,header = T,sep="\t",stringsAsFactors = F) %>%
+  df<-read.table(file,header = T,sep="\t",stringsAsFactors = F, na.strings = "NULL") %>%
     tbl_df()
  
   return(df)

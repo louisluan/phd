@@ -1,6 +1,7 @@
 require(dplyr)
 require(lazyeval)
 require(stargazer)
+
 #dplyr包里的主要函数都有加_的版本，可以接受字符串参数
 #比如下面用的filter_, group_by_
 #这样就可以接受lazyeval变量，在执行时拼出来参数
@@ -102,8 +103,16 @@ winsor<-function(x,p=0.01) {
   if(length(p) != 1 || p < 0 || p > 0.5) {
     stop("bad p-value for winsorization")
   }
-  lim <- quantile(x, probs=c(p, 1-p))
+  lim <- quantile(x, probs=c(p, 1-p),na.rm = T)
   x[ x < lim[1] ] <- lim[1]
   x[ x > lim[2] ] <- lim[2]
   return(x)
 }
+
+#分组OLS回归，可以分年或者分公司，分行业.
+group_lm<-function(df,by="year",formula){ 
+  mds <- group_by_(df,.dots = list(by)) %>%
+    do(mod=lm(formula, data = .))
+  return(mds)
+}
+
