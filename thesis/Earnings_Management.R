@@ -3,41 +3,7 @@ source("data_util.R")
 
 #Earnings Management Data preparation--------------
 
-em<-select(d_fs,Stkcd,year,SOE,INDC,AUDIT)
-#总流动资产
-em$TCA<-d_fs$A001100000
-#现金
-em$CASH<-d_fs$A001101000
-#总流动负债
-em$TCLIAB<-d_fs$A002100000
-#折旧
-em$DEPRE<-d_fs$D000103000
-#总资产
-em$TA<-d_fs$A001000000
-#总收入
-em$INCOME<-d_fs$B001100000
-#固定资产
-em$PPE<-d_fs$A001212000
-#无形资产
-em$INTANG<-d_fs$A001218000
-#应收票据
-em$NOTERCV<-d_fs$A001110000
-#应收款
-em$RCV<-d_fs$A001111000
-#其他应收款
-em$ORCV<-d_fs$A001121000
-#一年内到期的长期负债
-em$LIAB1Y<-d_fs$A002125000
-#长期待摊费用
-em$LTEXP<-d_fs$A001221000
-#存货
-em$INVENTORY<-d_fs$A001123000
-#应付账款
-em$AP<-d_fs$A002108000
-#应付税费
-em$TAXP<-d_fs$A002113000
-#其他流动资产
-em$OCA<-d_fs$A001125000
+
 
 
 
@@ -60,5 +26,8 @@ reg_jones_dd <- function(x,accrual,ta,revenue,ppe){
 
 
 
+#joining with mcs index data
 
+em$year<-extractyear(as.character(em$year))
+d_overall<-left_join(d_nall,em)
 

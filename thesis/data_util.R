@@ -59,6 +59,13 @@ p_summary<-function(df,id="corp",t="year"){
   #return(p)
 }
 
+#从年报字符串提取年信息，变为integer
+extractyear<-function(x){
+  year<-substr(x,1,4)
+  year<-as.integer(year)
+  return(year)
+}
+
 #相关系数矩阵，下Pearson上Spearman
 corr<-function(x){
   p_cor<-cor(x);
