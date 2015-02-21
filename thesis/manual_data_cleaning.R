@@ -1,4 +1,4 @@
-load("~/CSMAR/rdata/reduced_ws.RData")
+
 source("~/Documents/phd/thesis/data_util.R")
 
 
@@ -10,10 +10,7 @@ nm<-c("IC","CSR","FINCORP","SUBS","SUBMGMT","BUDGET","ERP","MGMTMASTER",
 names(d_man)<-nm
 
 d_man[is.na(d_man)]<-0
-qq<-function(x){
-  
-  table(x)
-}
+
 
 replace_na<-function(x){
   return(ifelse(x==-1,0,x))
