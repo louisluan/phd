@@ -2,7 +2,7 @@ load("~/CSMAR/reduced_ws.RData")
 source("data_util.R")
 
 
-d_man<-read.csv("~/Documents/phd/mcs_idx.csv")
+d_man<-read.csv("~/Documents/phd/rdata//mcs_idx.csv")
 nm<-c("IC","CSR","FINCORP","SUBS","SUBMGMT","BUDGET","ERP","MGMTMASTER",
       "MGMTNUM","MGMTAVGAGE","STAFFEDUNUM","SUBNAME","MGMTSEA","MIS","MGMTCH",
       "STAFFNUM","WEB","WEIBO","WEIXIN","HORNOR","HR","PUB","STRATEGY",
@@ -33,7 +33,7 @@ d_man$MGMTNUM<-replace_na(d_man$MGMTNUM)
 d_man$MGMTAVGAGE<-replace_na(d_man$MGMTAVGAGE)
 d_man$MGMTSEA<-replace_na(d_man$MGMTSEA)
 
-load("~/Documents/phd/COMBINED_TXT_ANAYSIS.RData")
+load("~/Documents/phd/rdata/COMBINED_TXT_ANAYSIS.RData")
 d_txt$Stkcd<-as.integer(d_txt$corp)
 d_txt$year<-as.integer(d_txt$year)
 

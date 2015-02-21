@@ -123,3 +123,17 @@ group_lm<-function(df,by="year",formula){
   return(mds)
 }
 
+#去除NA或0比例高于percent的变量列
+rm_nacol <- function(x,percent){
+  nx<-length(x[[1]])
+  for(i in names(x)){
+    
+    if(class(x[[i]])=="numeric") {
+      j <- sum(as.integer(is.na(x[[i]]) | x[[i]]==0))/nx
+      if(j>percent) x[[i]] <- NULL
+    }
+    
+  }
+  return(x)
+}
+
