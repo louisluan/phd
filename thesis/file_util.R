@@ -18,7 +18,7 @@ require(jiebaR)
 require(wordcloud)
 
 #universal jiebaR cutter for all text splitting purpose
-jcutter<-worker(user ="/Users//Luis//Documents//data//finance.txt")
+jcutter<-worker(user ="/Users//Luis/CSMAR//util//finance.txt")
 
 #----------------helper----------------------
 #function to extract firm year info
@@ -184,7 +184,7 @@ f_reader<-function(files) {
 #define a list or vector as VectorSource corpus
 fm_tdm<-function(list_chr){
   #Chinese stopwords for all text splitting purpose
-  stopwordCN<-readLines("/Users//Luis//Documents//data//stopwordcn.txt",encoding = "UTF-8",skipNul = T,warn = F)
+  stopwordCN<-readLines("~/CSMAR/util/stopwordcn.txt",encoding = "UTF-8",skipNul = T,warn = F)
   
   if(class(list_chr)=="list") list_chr<-unlist(list_chr)
   f1<-VectorSource(list_chr) %>%

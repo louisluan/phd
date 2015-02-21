@@ -76,10 +76,12 @@ corr<-function(x){
 
 #描述性统计输出
 o_descriptive<-function(...,head="Descriptive Statistics",file="./desc.htm"){
+  message("Try to use as.data.frame for tbl_df objects")
   stargazer(...,
             type="html",title=head,
-            out.header=TRUE,summary.logical=FALSE,
-            digits=2,median=TRUE,
+            out.header=TRUE,summary.logical=T,
+            digits=2,median=TRUE, summary=T,
+            column.sep.width ="10pt",
             out=file
   )
 }

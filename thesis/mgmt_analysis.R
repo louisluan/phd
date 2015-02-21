@@ -6,7 +6,7 @@ require(jiebaR)
 require(wordcloud)
 require(RTextTools)
 
-setwd("~/Documents/data/fs")
+setwd("~/CSMAR/fs/")
 
 # Wordclouds function for sample data -------------------------------------
 
@@ -49,7 +49,7 @@ all_mgmt$txt<-f_split(all_mgmt$txt)
 # }
 
 #---------------join back rated file----
-f_rated<-read.csv("~/Documents/phd/thesis/mgmt_sample.csv",stringsAsFactors=F)
+f_rated<-read.csv("~/CSMAR/rdata/mgmt_sample.csv",stringsAsFactors=F)
 
 #change type to char for matching purpose
 f_rated$corp<-f_id2str(as.integer(f_rated$corp))
@@ -102,6 +102,6 @@ r_mgmt<-cbind(r_mgmt,sentiment)
 r_mgmt[!is.na(r_mgmt$senti),"sentiment"]<-r_mgmt[!is.na(r_mgmt$senti),"senti"]
 
 d_mgmt<-select(r_mgmt,corp,year,sentiment)
-save(d_mgmt,file="~/Documents/phd/thesis/D_MGMT.RData")
-save(r_mgmt,file="~/Documents/phd/thesis/MDA_ALL.RData")
-write.csv(r_mgmt,file="~/Documents/phd/thesis/MDA_ALL.csv")
+save(d_mgmt,file="~/CSMAR/rdata/D_MGMT.RData")
+save(r_mgmt,file="~/CSMAR/rdata/MDA_ALL.RData")
+write.csv(r_mgmt,file="~/CSMAR/rdata/MDA_ALL.csv")

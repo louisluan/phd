@@ -7,7 +7,7 @@ setwd("~/CSMAR/")
 
 f_readtable_list(f_list_file())
 
-MN_map<-read.csv("./util/Accruals_Name_MAP.csv",header = F,stringsAsFactors= F)
+MN_map<-read.csv("~/CSMAR/util/Accruals_Name_MAP.csv",header = F,stringsAsFactors= F)
 
 
 
@@ -64,7 +64,7 @@ df <- left_join(j_ac,j_fr) %>%
 
 #Varibale screening------------------------------
 #删掉0和NA过多的列
-xdf<-rm_nacol(df,0.99) %>%
+xdf<-rm_nacol(df,0.98) %>%
   arrange(Stkcd,desc(year)) %>%
   distinct(Stkcd,year) %>%
   #生成行业代码C仍然用2级，别的行业用1级
@@ -79,7 +79,7 @@ xdf<-rm_nacol(df,0.99) %>%
   filter(Stktype=="A") %>%
   #去掉部分没用的数据
   select(-S0702b,-Crcd,-Audittyp,-Indcd,-Stktype)
-
+xdf[is.na(xdf)]<-0
 
 #remove used data.frame objects--------------
 
@@ -96,7 +96,7 @@ rm(list=ls(pattern="MN"))
 p_summary(xdf,id="Stkcd",t="year")
 
 #contruct readable name data.frame 
-dr<-select(xdf,Stkcd,year,TT_ASSET:TT_ACCRUAL)
+dr<-select(xdf,Stkcd,year,TT_ASSET:TT_ACCRUAL,INDC:AUDIT)
 
 
 
@@ -123,8 +123,13 @@ dr$SALES_EXP<-xdf$B001209000
 dr$MGMT_EXP<-xdf$B001210000
 #公允价值变动
 dr$FAIR_CH<-xdf$B001301000
+#年度股票回报率
+dr$YRET<-xdf$Yretwd
 
-save.image(file="~/Documents/phd/rdata/csmar_cleaned.RData")
+
+
+
+save.image(file="~/CSMAR/rdata/csmar_cleaned.RData")
 
 
 #-----Possible Future Usage---------

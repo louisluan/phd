@@ -1,8 +1,8 @@
-load("~/CSMAR/reduced_ws.RData")
-source("data_util.R")
+load("~/CSMAR/rdata/reduced_ws.RData")
+source("~/Documents/phd/thesis/data_util.R")
 
 
-d_man<-read.csv("~/Documents/phd/rdata//mcs_idx.csv")
+d_man<-read.csv("~/CSMAR/rdata/mcs_idx.csv")
 nm<-c("IC","CSR","FINCORP","SUBS","SUBMGMT","BUDGET","ERP","MGMTMASTER",
       "MGMTNUM","MGMTAVGAGE","STAFFEDUNUM","SUBNAME","MGMTSEA","MIS","MGMTCH",
       "STAFFNUM","WEB","WEIBO","WEIXIN","HORNOR","HR","PUB","STRATEGY",
@@ -33,7 +33,7 @@ d_man$MGMTNUM<-replace_na(d_man$MGMTNUM)
 d_man$MGMTAVGAGE<-replace_na(d_man$MGMTAVGAGE)
 d_man$MGMTSEA<-replace_na(d_man$MGMTSEA)
 
-load("~/Documents/phd/rdata/COMBINED_TXT_ANAYSIS.RData")
+load("~/CSMAR/rdata/COMBINED_TXT_ANAYSIS.RData")
 d_txt$Stkcd<-as.integer(d_txt$corp)
 d_txt$year<-as.integer(d_txt$year)
 
@@ -41,6 +41,8 @@ d_all<-left_join(d_man,d_txt)
 d_all$corp<-NULL
 d_all[is.na(d_all)]<-0
 
-d_nall<-p_balance(d_all,"Stkcd","year")
+dm<-p_balance(d_all,"Stkcd","year")
 
+dm<-arrange(dm,Stkcd,desc(year))
 
+save(dm,file="~/CSMAR/rdata/ALL_MANUAL_DATA.RData")

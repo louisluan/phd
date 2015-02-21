@@ -6,7 +6,7 @@ require(jiebaR)
 require(wordcloud)
 require(RTextTools)
 
-setwd("~/Documents/data/fs")
+setwd("~/CSMAR/fs")
 
 #Analysis of CSR reports --------
 fl_csr<-f_list_csr()
@@ -45,7 +45,7 @@ d_culture$txt<-NULL
 d_culture$tlen<-NULL
 d_culture$txtculture<-d_culture$tlen>5
 
-load("~/Documents/phd/thesis//D_MGMT.RData")
+load("~/CSMAR/rdata/D_MGMT.RData")
 d_txt<-left_join(d_mgmt,d_csr) %>%
     left_join(d_ic) %>%
     left_join(d_strategy) %>%
@@ -54,4 +54,4 @@ d_txt<-left_join(d_mgmt,d_csr) %>%
 
 d_txt[is.na(d_txt)]<-0
 
-save(d_txt,file="~/Documents/phd/thesis/COMBINED_TXT_ANAYSIS.RData")
+save(d_txt,file="~/CSMAR/rdata/COMBINED_TXT_ANAYSIS.RData")
