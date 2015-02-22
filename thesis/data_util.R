@@ -1,5 +1,6 @@
-require(dplyr)
+require(plyr)
 require(lazyeval)
+require(dplyr)
 require(stargazer)
 
 #dplyr包里的主要函数都有加_的版本，可以接受字符串参数
@@ -118,10 +119,33 @@ winsor<-function(x,p=0.01) {
   return(x)
 }
 
+winsor_df<-function(x,p=0.01){
+  for(i in names(x)){
+    
+    if(class(x[[i]])=="numeric") {
+       x[[i]] <- winsor(x[[i]],p)
+    }
+    
+  }
+  return(x)
+  
+}
+
 #分组OLS回归，可以分年或者分公司，分行业.
 group_lm<-function(df,by="year",formula){ 
   mds <- group_by_(df,.dots = list(by)) %>%
-    do(mod=lm(formula, data = .))
+    do(mod=lm(formula, data = .,na.action = na.exclude))
+  return(mds)
+}
+
+#根据by来进行滚动回归，windows是滚动期数,align是对齐方式,返回回归系数
+group_roll_lm <- function(df,by="Stkcd",formula,windows=3,align="center"){ 
+  mds <- group_by_(df,.dots = list(by)) %>%
+    do(mod=rollapply(data=., width=windows, by.column=FALSE, align=align,
+                     FUN= function(x){
+                       tmp<-lm(formula,data=as.data.frame(x),na.action = na.exclude)
+                       return(coef(tmp))})
+    )
   return(mds)
 }
 
@@ -135,6 +159,18 @@ rm_nacol <- function(x,percent){
       if(j>percent) x[[i]] <- NULL
     }
     
+  }
+  return(x)
+}
+
+#将data.frame中NA换成0
+na2zero_df <- function(x){
+  
+  for(i in names(x)){
+    
+    if(class(x[[i]])=="numeric") {
+      x[is.na(x[[i]]),i]<-0     
+    }  
   }
   return(x)
 }

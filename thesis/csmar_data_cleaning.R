@@ -125,6 +125,8 @@ dr$MGMT_EXP<-xdf$B001210000
 dr$FAIR_CH<-xdf$B001301000
 #年度股票回报率
 dr$YRET<-xdf$Yretwd
+#经营活动现金净流量
+dr$OP_CFLOW<-xdf$C001000000
 
 
 

@@ -10,12 +10,13 @@
 #if the raw text is encoded other than UTF-8
 #Access Mac Appstore and download a free program called "汉字编码转换"
 #This app can do encoding convertion in batch mode
-
-require(dplyr)
+require(plyr)
 require(stringr)
 require(tm)
 require(jiebaR)
 require(wordcloud)
+require(dplyr)
+
 
 #universal jiebaR cutter for all text splitting purpose
 jcutter<-worker(user ="/Users//Luis/CSMAR//util//finance.txt")
