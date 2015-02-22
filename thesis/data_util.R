@@ -1,4 +1,6 @@
 require(plyr)
+require(zoo)
+require(AER)
 require(lazyeval)
 require(dplyr)
 require(stargazer)
@@ -140,6 +142,7 @@ group_lm<-function(df,by="year",formula){
 
 #根据by来进行滚动回归，windows是滚动期数,align是对齐方式,返回回归系数
 group_roll_lm <- function(df,by="Stkcd",formula,windows=3,align="center"){ 
+  
   mds <- group_by_(df,.dots = list(by)) %>%
     do(mod=rollapply(data=., width=windows, by.column=FALSE, align=align,
                      FUN= function(x){
@@ -147,6 +150,24 @@ group_roll_lm <- function(df,by="Stkcd",formula,windows=3,align="center"){
                        return(coef(tmp))})
     )
   return(mds)
+}
+
+#提取group_roll_lm的结果，合并回data frame，合并时会去掉windows-1行
+group_roll_beta2df <- function(df,grouplm, windows =3,id="Stkcd",t="year"){
+  message("note that windows-1 rows will be discarded ")
+  minytr <- min(df[[t]],na.rm = T)
+  lmdf<-ldply(grouplm[[2]],rbind)
+  tn<-names(lmdf)
+  tn<-paste("B_",tn,sep="")
+  names(lmdf)<-tn
+  
+  xt<-list(pt=as.symbol(t),pfrom=minytr+windows-1)
+  
+  tdf<-arrange_(df,.dots=list(id,t)) %>%
+    filter_(interp("pt>=pfrom",.values = xt))
+  
+  tdf<-cbind(tdf,lmdf)
+  return(tdf)
 }
 
 #去除NA或0比例高于percent的变量列
