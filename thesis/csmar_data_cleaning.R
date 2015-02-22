@@ -127,9 +127,18 @@ dr$FAIR_CH<-xdf$B001301000
 dr$YRET<-xdf$Yretwd
 #经营活动现金净流量
 dr$OP_CFLOW<-xdf$C001000000
-
-
-
+#营业收入
+dr$OP_INCOME<-xdf$B001100000
+#营业总成本
+dr$OP_COST<-xdf$B001200000
+#减值损失
+dr$IMP_LOSS<-xdf$B001212000
+#市净率
+dr$M_B<-xdf$F100401A
+#每股收益EPS
+dr$EPS<-xdf$F020108
+#总市值
+dr$MKT_CAP<-xdf$F100801A
 
 save.image(file="~/CSMAR/rdata/csmar_cleaned.RData")
 
@@ -155,10 +164,7 @@ save.image(file="~/CSMAR/rdata/csmar_cleaned.RData")
 # dr$RCV<-xdf$A001111000
 # #一年内到期的长期负债
 # dr$LIAB1Y<-xdf$A002125000
-# #营业收入
-# dr$OPINCOME<-xdf$B001100000
-# #营业总成本
-# dr$OPCOST<-xdf$B001200000
+
 # #净利润
 # dr$PROFIT<-xdf$B002000000
 # #财务费用
