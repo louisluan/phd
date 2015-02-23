@@ -14,22 +14,22 @@ MN_map<-read.csv("~/CSMAR/util/Accruals_Name_MAP.csv",header = F,stringsAsFactor
 #Combining data------------------------------
 
 names(MNMAPR_Accruals)<-MN_map$V3
-j_ac<-arrange(MNMAPR_Accruals,Stkcd,desc(Accper)) %>%
+j_ac<-arrange(MNMAPR_Accruals,Stkcd,Accper) %>%
   mutate(year=extractyear(Accper)) %>%
   select(-NO_USE1,-NO_USE2,-NO_USE3,-NO_USE4,-Accper)
 
-j_trd<-arrange(TRD_Year,Stkcd,desc(Trdynt)) %>%
+j_trd<-arrange(TRD_Year,Stkcd,Trdynt) %>%
   mutate(year=Trdynt) %>%
   filter(Yarkettype %in% c(1,4,16)) %>%
-  select(Stkcd,year,Yretwd)
+  select(Stkcd,year,Yretwd,Ysmvttl)
 
-j_hd <- arrange(HLD_Contrshr,desc(Reptdt)) %>%
+j_hd <- arrange(HLD_Contrshr,Reptdt) %>%
   distinct(Stkcd)
 
 j_fr <- left_join(FS_Combas,FS_Comins) %>%
   left_join(FS_Comscfd) %>%
   left_join(FS_Comscfi) %>%
-  arrange(Stkcd,desc(Accper),Typrep) %>%
+  arrange(Stkcd,Accper,Typrep) %>%
   filter(substr(Accper,6,10)=="12-31",Typrep=="A") %>%
   mutate(year=extractyear(Accper)) %>%
   select(-Accper)
@@ -43,12 +43,12 @@ j_fi <-left_join(FI_T1,FI_T3) %>%
   left_join(FI_T9) %>%
   left_join(FI_T2) %>%
   left_join(FI_T10) %>%
-  arrange(Stkcd,desc(Accper),Indcd,Typrep) %>%
+  arrange(Stkcd,Accper,Indcd,Typrep) %>%
   filter(substr(Accper,6,10)=="12-31",Typrep=="A") %>%
   mutate(year=extractyear(Accper)) %>%
   select(-Accper)
 
-j_fa <- arrange(FIN_Audit,Stkcd,desc(Accper)) %>%
+j_fa <- arrange(FIN_Audit,Stkcd,Accper) %>%
   filter(substr(Accper,6,10)=="12-31") %>%
   mutate(year=extractyear(Accper)) %>%
   select(-Accper)
@@ -69,6 +69,8 @@ xdf<-rm_nacol(df,0.98) %>%
   distinct(Stkcd,year) %>%
   #生成行业代码C仍然用2级，别的行业用1级
   mutate(INDC=as.factor(ifelse(substr(Indcd,1,1)=="C",substr(Indcd,1,2),substr(Indcd,1,1)))) %>%
+  #生成一级行业代码
+  mutate(INDCD=as.factor( substr(Indcd,1,1) ) ) %>%
   #找出国企
   mutate(SOE=substr(S0702b,1,2) %in% c("11","21","22","23")) %>%
   #找出交叉上市公司
@@ -138,7 +140,7 @@ dr$M_B<-xdf$F100401A
 #每股收益EPS
 dr$EPS<-xdf$F020108
 #总市值
-dr$MKT_CAP<-xdf$F100801A
+dr$MKT_CAP<-xdf$Ysmvttl
 
 save.image(file="~/CSMAR/rdata/csmar_cleaned.RData")
 

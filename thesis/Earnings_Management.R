@@ -119,7 +119,7 @@ DD_tmp<-group_roll_lm(DD,fm_roll,by="Stkcd",windows = 3,align = "center")
 DD<-group_roll_beta2df(DD,DD_tmp,windows = 3,id = "Stkcd",t="year")
 
 DD1<- mutate(DD,
-            DD_DA=winsor(DIF_WC-B_F_CFLOW*F_CFLOW + B_OP_CFLOW*OP_CFLOW +
+            DD_DA=winsor(DIF_WC - B_F_CFLOW*F_CFLOW + B_OP_CFLOW*OP_CFLOW +
                            B_L_CFLOW*L_CFLOW) )%>%
   select(Stkcd,year,DD_DA) %>%
   arrange(Stkcd,year) %>%
@@ -127,7 +127,9 @@ DD1<- mutate(DD,
   
 
 
-EM<-left_join(EM,DD1)
+EM<-left_join(EM,DD1) %>%
+  select(Stkcd,year,DD_DA,MODI_DA,LU_DA) %>%
+  arrange(Stkcd,year)
 
 summary(select(EM,DD_DA,MODI_DA,LU_DA))
 
@@ -136,4 +138,4 @@ rm(list=ls(pattern="DD"))
 rm(list=ls(pattern="fm_"))
 
 
-
+save(EM,file="~/CSMAR/rdata/Earnings_Mangement.RData")

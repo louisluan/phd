@@ -1,9 +1,10 @@
 require(plyr)
 require(zoo)
 require(AER)
-require(lazyeval)
-require(dplyr)
 require(stargazer)
+require(dplyr)
+require(lazyeval)
+
 
 #dplyr包里的主要函数都有加_的版本，可以接受字符串参数
 #比如下面用的filter_, group_by_
@@ -11,7 +12,7 @@ require(stargazer)
 #主要可以处理不同面板data.frame里面个体变量id和时间变量t命名不同的问题
 #直接将字符串传递到函数里
 
-p_balance<-function(df,id="corp",t="year",from=2011,to=2013) {
+p_balance<-function(df,id="Stkcd",t="year",from=2011,to=2013) {
   #计算时间变量长度
   ncount<-to-from+1
   #如果时间变量是字符的，改成整数
@@ -30,15 +31,14 @@ p_balance<-function(df,id="corp",t="year",from=2011,to=2013) {
 }
 
 #描述面板数据的类型
-p_summary<-function(df,id="corp",t="year"){
+p_summary<-function(df,id="Stkcd",t="year"){
   df[[t]]<-as.integer(df[[t]])
   #输出是否有id和t重复的观测
   n_dup<-duplicated(df[,c(id,t)])
   if(sum(n_dup,na.rm=T)>0) {
     print("There is duplicate record,check id and t variable!")
     print(df[n_dup,])
-  }
-  
+  }  
   #用lazyeval来让运行时决定id和t的实际名
   p_max<-interp(quote(max(var)), var = as.name(t))
   p_min<-interp(quote(min(var)), var = as.name(t))
@@ -54,8 +54,7 @@ p_summary<-function(df,id="corp",t="year"){
     mutate(pattern = paste(as.character(min_t),as.character(max_t),as.character(obs_t),sep="-")) %>%
     group_by(pattern) %>%
     dplyr::summarise(style = n())
-  
-  
+    
   #输出时间分布类型
   print(p)
   barplot(p$style,names.arg=p$pattern)
@@ -140,24 +139,53 @@ group_lm<-function(df,by="year",formula){
   return(mds)
 }
 
+#将回归结果中的变量名符号变成_然后去掉空格
+norm_beta_name <- function(x) {
+  tmp<-gsub("[[:punct:]]", "_", x)
+  tmp<-gsub("[[:space:]]", "", tmp)
+  return(tmp)
+}
+
+#提取group_roll_lm的结果，合并回data frame，合并时会去掉windows-1行
+group_lm_beta2df <- function(df,grouplm, by="year"){
+  message("May introduce NA ")
+  lmdf <-ldply(grouplm[[2]],coef)
+  tn<-names(lmdf)
+  tn<-norm_beta_name(tn)
+  tn<-paste("B_",tn,sep="")
+  names(lmdf)<-tn
+  lmdf<-cbind(grouplm[by],lmdf)
+  tdf<-left_join(df,lmdf,by=by)
+  return(tdf)
+}
+
 #根据by来进行滚动回归，windows是滚动期数,align是对齐方式,返回回归系数
 group_roll_lm <- function(df,by="Stkcd",formula,windows=3,align="center"){ 
-  
+  message("Needs continous panel data,better p_balance first")
   mds <- group_by_(df,.dots = list(by)) %>%
     do(mod=rollapply(data=., width=windows, by.column=FALSE, align=align,
                      FUN= function(x){
                        tmp<-lm(formula,data=as.data.frame(x),na.action = na.exclude)
-                       return(coef(tmp))})
+                       return(coef(tmp))}
+                     )
     )
   return(mds)
 }
+
+
+
 
 #提取group_roll_lm的结果，合并回data frame，合并时会去掉windows-1行
 group_roll_beta2df <- function(df,grouplm, windows =3,id="Stkcd",t="year"){
   message("note that windows-1 rows will be discarded ")
   minytr <- min(df[[t]],na.rm = T)
-  lmdf<-ldply(grouplm[[2]],rbind)
+  #增加了对变量的2次转置，确保如果是单行数据的话变成列形式
+  lmdf<-ldply(grouplm[[2]],function(x,...){
+    x<-t(t(x))
+    rbind(x,...)
+  })
   tn<-names(lmdf)
+  tn<-norm_beta_name(tn)
   tn<-paste("B_",tn,sep="")
   names(lmdf)<-tn
   
@@ -169,6 +197,17 @@ group_roll_beta2df <- function(df,grouplm, windows =3,id="Stkcd",t="year"){
   tdf<-cbind(tdf,lmdf)
   return(tdf)
 }
+
+
+group_roll_func <- function(df,by="Stkcd",windows=3,align="center",func=sd,...){ 
+  message("Needs continous panel data,better p_balance first")
+  mds <- group_by_(df,.dots = list(by)) %>%
+    do(mod=rollapply(data=., width=windows, by.column=FALSE, align=align,
+                     FUN= func,...)
+    )
+  return(mds)
+}
+
 
 #去除NA或0比例高于percent的变量列
 rm_nacol <- function(x,percent){
