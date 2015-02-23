@@ -1,5 +1,21 @@
 
-source("~/Documents/phd/thesis/data_util.R")
+DIRS_MAC_DIR <- "~/Documents/phd/thesis/"
+DIRS_WIN_DIR <- "C:/programs/git/phd/phd/thesis/"
+DIRS_DATA_UTIL <-"data_util.R"
+DIRS_FILE_UTIL <- "file_util.R"
+DIRS_TEST_MAC <- list.dirs(DIRS_MAC_DIR)
+
+DIRS_FP_DATA <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_DATA_UTIL,sep=""),
+                       paste(DIRS_WIN_DIR,DIRS_DATA_UTIL,sep="") )
+
+DIRS_FP_FILE <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_FILE_UTIL,sep=""),
+                       paste(DIRS_WIN_DIR,DIRS_FILE_UTIL,sep="") )
+
+source(DIRS_FP_DATA)
+
+rm(list=ls(pattern = "DIRS_"))
+
+
 
 
 d_man<-read.csv("~/CSMAR/rdata/mcs_idx.csv")
