@@ -1,6 +1,26 @@
-setwd("~/CSMAR/rdata/")
+#Initialize data environment
+DIRS_MAC_DIR <- "~/Documents/phd/thesis/"
+DIRS_WIN_DIR <- "C:/programs/git/phd/phd/thesis/"
+DIRS_DATA_UTIL <-"data_util.R"
+DIRS_FILE_UTIL <- "file_util.R"
+DIRS_TEST_MAC <- list.dirs(DIRS_MAC_DIR)
+DIRS_RDATA_WIN <- "D:/CSMAR/rdata"
+DIRS_RDATA_MAC <-"~/CSMAR/rdata/"
+DIRS_RDATA <-ifelse(length(DIRS_TEST_MAC)>1,DIRS_RDATA_MAC, DIRS_RDATA_WIN)
+DIRS_FP_DATA <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_DATA_UTIL,sep=""),
+                       paste(DIRS_WIN_DIR,DIRS_DATA_UTIL,sep="") )
+
+DIRS_FP_FILE <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_FILE_UTIL,sep=""),
+                       paste(DIRS_WIN_DIR,DIRS_FILE_UTIL,sep="") )
+setwd(DIRS_RDATA)
 load("ALL_MANUAL_DATA.RData")
 load("csmar_cleaned.RData")
+source(DIRS_FP_DATA,encoding="UTF-8")
+
+rm(list=ls(pattern = "DIRS_"))
+
+
+
 
 
 D <- left_join(dm,select(dr,Stkcd,year,AUDIT))
