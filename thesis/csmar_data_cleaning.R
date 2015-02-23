@@ -162,6 +162,8 @@ dr$M_B<-xdf$F100401A
 dr$EPS<-xdf$F020108
 #总市值
 dr$MKT_CAP<-xdf$Ysmvttl
+dr$INVEST<-xdf$C002006000
+
 
 save.image(file="~/CSMAR/rdata/csmar_cleaned.RData")
 

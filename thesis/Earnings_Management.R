@@ -14,10 +14,10 @@ DIRS_FP_DATA <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_DATA_UTIL
 DIRS_FP_FILE <- ifelse(length(DIRS_TEST_MAC)>1,paste(DIRS_MAC_DIR,DIRS_FILE_UTIL,sep=""),
                        paste(DIRS_WIN_DIR,DIRS_FILE_UTIL,sep="") )
 setwd(DIRS_RDATA)
-load("csmar_cleaned.RData")
-source(DIRS_FP_DATA,encoding="UTF-8")
 load("MCS_INDEX.RData")
 load("csmar_cleaned.RData")
+source(DIRS_FP_DATA,encoding="UTF-8")
+
 rm(list=ls(pattern = "DIRS_"))
 
 

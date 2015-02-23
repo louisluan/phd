@@ -31,15 +31,12 @@ DD_IDX <- arrange(dr,Stkcd,year) %>%
          SIZE=log(TT_ASSET),
          E_P=COREREV/lag(MKT_CAP),
          D=as.integer(YRET>=0),
-         L_EXPN=lag(EXPN),
-         F1_EXPN=lead(EXPN),
-         F_EXPN=ifelse(is.na(F1_EXPN),EXPN,F1_EXPN),
+
          FROE=lead(ROE),FYRET=lead(YRET),LROE=lag(ROE),LYRET=lag(YRET),
          LROA=lag(ROA),FROA=lead(ROA),LEPS=lag(EPS),FEPS=lead(EPS),
          LEARN=lag(EARN),FEARN=lead(EARN),LE_P=lag(E_P),FE_P=lead(E_P),
          LCOREREV=lag(COREREV),FCOREREV=lead(COREREV),
          DLOSS=as.integer(COREREV<0)  ) %>%
-  select(-F1_EXPN) %>%
   winsor_df(p=0.05) %>%
   ungroup() %>%
   p_balance(id="Stkcd",from=2007,to=2013)
@@ -154,7 +151,22 @@ o_descriptive(as.data.frame(select(d,mgmt_op:audit_unq)),
 )
 
 
+load("Over_Ivest.RData")
 
+MIDX<-left_join(DIDX,OV)
 
+fm_ov <-  OVER_INV ~  LEV + SIZE + SOE  + MSCORE +FY
 
+OV_DD <-plm(fm_ov,data=MIDX,model="pooling",index=c("Stkcd","year"))
+summary(OV_DD)
+
+fm_ov1 <-  FROE ~  LEV + SIZE + SOE  + MSCORE*OVER_INV +FY
+
+OV1_DD <-plm(fm_ov1,data=MIDX,model="pooling",index=c("Stkcd","year"))
+summary(OV1_DD)
+
+fm_ov2 <-  E_P ~  LEV + SIZE + SOE  + MSCORE*OVER_INV +FY
+
+OV2_DD <-plm(fm_ov2,data=MIDX,model="pooling",index=c("Stkcd","year"))
+summary(OV2_DD)
 
