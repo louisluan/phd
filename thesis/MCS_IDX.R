@@ -57,50 +57,111 @@ DIDX$mgmt_dplm<-winsor(DIDX$mgmt_dplm,0.05)
 DIDX$mgmt_exp <- DIDX$MGMTAVGAGE
 DIDX$mgmt_exp<-winsor(DIDX$mgmt_exp,0.05)
 
+o_descriptive(as.data.frame( select(DIDX,mgmt_op:mgmt_exp) ),
+              head="Collected Data Descriptives",
+              file="MCS_Colleced_DESC.htm")
+
+o_corr(corr(select(DIDX,mgmt_op:mgmt_exp) ),
+       head="Collected Data Correlation",
+       file="MCS_Collected_CORR.htm")
 
 DIDX$FY<-factor(DIDX$year)
 
 
 fm_lm_ret<-YRET ~  mgmt_op + csr_con  + 
     ctrl_cap + mkt_inno + audit_unq + 
-  mgmt_dplm + mgmt_exp   + LEV + SIZE
+  mgmt_dplm + mgmt_exp   + LEV + SIZE 
 
 DD_PLM_RET <-plm(fm_lm_ret,data=DIDX,model="within",index=c("Stkcd","year"))
 summary(DD_PLM_RET)
 
+
+o_reg(DD_PLM_RET,head="MCS Factors TO RETURN Regression Result",
+      ctrl="FY",ctlab="Controls",ylab="Annual Stock Return",
+      file="MCS_Factors_REG_RETURN.htm")
+
 fm_lm_ern <- E_P ~     mgmt_op + csr_con  + 
     ctrl_cap  + mkt_inno + audit_unq + 
-  mgmt_dplm + mgmt_exp   + LEV + SIZE
+  mgmt_dplm + mgmt_exp   + LEV + SIZE +SOE +FY 
 
 
 LM_ERN <-plm(fm_lm_ern,data=DIDX,model="pooling",index=c("Stkcd","year"))
 summary(LM_ERN)
 
+o_reg(LM_ERN,head="MCS Factors TO EARINGS Regression Result",
+      ctrl="FY",ctlab="Controls",ylab="Scaled Earnings",
+      file="MCS_Factors_REG_EARNINGS.htm")
 
 DIDX <- mutate(DIDX,
-               MSCORE= winsor(30*mgmt_op + 10*csr_con  + 
+               MCSINDEX= 30*mgmt_op + 10*csr_con  + 
   10*ctrl_cap + 20*mkt_inno + 20*audit_unq + 
-  5*mgmt_dplm + 5*log(mgmt_exp),p=0.05),
-  DC_MS = ntile(MSCORE,10),
-  DMS=DC_MS>8) %>% 
-  group_by(year) 
+  5*mgmt_dplm + 5*log(mgmt_exp),
+  DC_MS = ntile(MCSINDEX,10),
+  DMS=DC_MS>8) %>%
+  winsor_df
+
+DIDX2011 <- filter(DIDX,year==2011) %>%
+  ungroup() %>%
+  mutate(MCSINDEX2011=MCSINDEX) %>%
+  select(MCSINDEX2011) %>%
+  as.data.frame
+DIDX2012 <- filter(DIDX,year==2012) %>%
+  ungroup() %>%
+  mutate(MCSINDEX2012=MCSINDEX) %>%
+  select(MCSINDEX2012) %>%
+  as.data.frame
+DIDX2013 <- filter(DIDX,year==2013) %>%
+  ungroup() %>%
+  mutate(MCSINDEX2013=MCSINDEX) %>%
+  select(MCSINDEX2013) %>%
+  as.data.frame
+MCSINDEX<-cbind(DIDX2011,DIDX2012,DIDX2013)
 
 
+o_descriptive(MCSINDEX ,
+              head="MCS INDEX Descriptive Statitics ",
+              file="MCS_INDEX_DESC.htm")
 
-fm_lm_idx <- E_P ~    MSCORE   + LEV + SIZE +FY
+o_png(file="MCS_INDEX_HIST.PNG",w=800,h=600)
+hist(DIDX$MCSINDEX,main="MCS指数直方图",xlab="MCS INDEX")
+dev.off()
+
+fm_lm_idx <- E_P ~    MCSINDEX   + LEV + SIZE +FY +SOE + INDCD
 
 LM_IDX <-plm(fm_lm_idx,data=DIDX,model="pooling",index=c("Stkcd","year"))
 summary(LM_IDX)
 
+o_descriptive(as.data.frame(select(DIDX,E_P,MCSINDEX,LEV,SIZE) ),
+              head="MCS INDEX PERFORMANCE DESCRIPTIVES",
+              file="MCS_INDEX_PERF_DESC.htm")
 
-fm_lm_idx_r <- YRET ~    MSCORE   + LEV + SIZE 
+o_corr(corr(as.matrix(select(DIDX,E_P,MCSINDEX,LEV,SIZE) ) ),
+              head="MCS INDEX PERFORMANCE CORRELATION MATRIX",
+              file="MCS_INDEX_PERF_CORR.htm")
 
-LM_IDX_R <-plm(fm_lm_idx_r,data=DIDX,model="within",index=c("Stkcd","year"))
-summary(LM_IDX_R)
+fm_lm_idx_r <- YRET ~    MCSINDEX   + LEV + SIZE+ INDCD 
+
+LM_IDX_R <-plm(fm_lm_idx_r,data=DIDX,model="pooling",index=c("Stkcd","year"))
+
+fm_lm_idx_r1 <- YRET ~    MCSINDEX   + LEV + SIZE+ INDCD 
+
+LM_IDX_R1 <-plm(fm_lm_idx_r1,data=DIDX,model="within",index=c("Stkcd","year"))
+
+o_reg(LM_IDX_R,LM_IDX_R1,
+      head="MCS INDEX PERFORMANCE CORRELATION Regression Result",
+      ylab="Scaled Earnings",ctrl="INDCD",ctlab="CONTROLS",
+      file="MCS_INDEX_PERF_REG.htm"
+      )
 
 
+t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2011],
+       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2011],na.rm=T)
 
-t.test(DIDX$YRET[DIDX$DC_MS==1 & DIDX$year==2012],DIDX$YRET[DIDX$DC_MS==10 & DIDX$year==2012],na.rm=T)
+t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2012],
+       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2012],na.rm=T)
+
+t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2013],
+       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2013],na.rm=T)
 
 
 load("Earnings_Mangement.RData")
@@ -109,39 +170,46 @@ MIDX <- left_join(DIDX,EM) %>%
   winsor_df
 
 
-fm_dd <-  DD_DA ~   SIZE + DEBT_RATIO + SOE  
+fm_dd <-  DD_DA ~   SIZE  + MCSINDEX + LEV + INDCD |.-MCSINDEX + ROE
 
-LM_DD <-plm(fm_dd,data=MIDX,model="pooling",index=c("Stkcd","year"))
+LM_DD <-ivreg(fm_dd,data=MIDX)
 summary(LM_DD)
 
-fm_lu <- LU_DA  ~  LEV + SIZE + SOE  + FY +  MSCORE*DLOSS 
+fm_md <-  MODI_DA ~   SIZE  + MCSINDEX + LEV + INDCD |.-MCSINDEX + ROE
+
+MD_DD <-ivreg(fm_md,data=MIDX)
+summary(MD_DD)
+
+fm_ld <-  LU_DA ~   SIZE  + MCSINDEX + LEV + INDCD |.-MCSINDEX + ROE
+
+MD_LD <-ivreg(fm_ld,data=MIDX)
+summary(MD_LD)
+
+fm_lu <- LU_DA  ~  LEV + SIZE + SOE  + FY +  MCSINDEX*DLOSS 
 
 LU_DD <-plm(fm_lu,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(LU_DD)
 
-fm_md <-  MODI_DA ~  LEV + SIZE + SOE  + MSCORE*E_P +FY
 
-MD_DD <-plm(fm_md,data=MIDX,model="pooling",index=c("Stkcd","year"))
-summary(MD_DD)
 
 load("Conservatism_Data.RData")
 
 MIDX <-left_join(MIDX,CS)
 
 
-fm_cs <-  CSMATCH ~  LEV + SIZE + SOE  + MSCORE*DD_DA +FY
+fm_cs <-  CSMATCH ~  LEV + SIZE + SOE  + MCSINDEX*DD_DA 
 
 CS_DD <-plm(fm_cs,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(CS_DD)
 
-fm_cc <-  CSCORE ~  LEV + SIZE + SOE  + MSCORE*DD_DA +FY
+fm_cc <-  CSCORE ~  LEV + SIZE + SOE  + MCSINDEX*DD_DA 
 
 CC_DD <-plm(fm_cc,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(CC_DD)
 
-fm_gc <-  GSCORE ~  LEV + SIZE + SOE  + MSCORE*DD_DA +FY
+fm_gc <-  GSCORE ~  LEV + SIZE + SOE  + MCSINDEX*DD_DA 
 
-GC_DD <-plm(fm_cc,data=MIDX,model="pooling",index=c("Stkcd","year"))
+GC_DD <-plm(fm_gc,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(GC_DD)
 
 
@@ -155,17 +223,17 @@ load("Over_Ivest.RData")
 
 MIDX<-left_join(DIDX,OV)
 
-fm_ov <-  OVER_INV ~  LEV + SIZE + SOE  + MSCORE +FY
+fm_ov <-  OVER_INV ~  LEV + SIZE + SOE  + MCSINDEX +FY
 
 OV_DD <-plm(fm_ov,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(OV_DD)
 
-fm_ov1 <-  FROE ~  LEV + SIZE + SOE  + MSCORE*OVER_INV +FY
+fm_ov1 <-  FROE ~  LEV + SIZE + SOE  + MCSINDEX*OVER_INV +FY
 
 OV1_DD <-plm(fm_ov1,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(OV1_DD)
 
-fm_ov2 <-  E_P ~  LEV + SIZE + SOE  + MSCORE*OVER_INV +FY
+fm_ov2 <-  E_P ~  LEV + SIZE + SOE  + MCSINDEX*OVER_INV +FY
 
 OV2_DD <-plm(fm_ov2,data=MIDX,model="pooling",index=c("Stkcd","year"))
 summary(OV2_DD)
