@@ -70,8 +70,8 @@ extractyear<-function(x){
 
 #相关系数矩阵，下Pearson上Spearman
 corr<-function(x){
-  p_cor<-cor(x);
-  s_cor<-cor(x,method="spearman");
+  p_cor<-cor(x,use = "complete");
+  s_cor<-cor(x,use = "complete",method="spearman");
   p_cor[upper.tri(p_cor)==TRUE]<-s_cor[upper.tri(s_cor)==TRUE];
   return(p_cor);
 }
@@ -102,7 +102,7 @@ o_corr<-function(...,head="Correlations",file="./cor.htm"){
 o_reg<-function(...,head="Regression Result",ylab,ctrl,ctlab,file="./reg.htm"){
   stargazer(...,type="html",title=head,
             report="vc*p",digits=3,
-            dep.var.labels=vlab,
+            dep.var.labels=ylab,
             model.names=FALSE,model.numbers=TRUE,
             header=FALSE,
             omit=ctrl,omit.labels=ctlab,
@@ -233,5 +233,14 @@ na2zero_df <- function(x){
     }  
   }
   return(x)
+}
+
+o_png<-function(file="png1.png",w=600,h=600){
+  png(filename = file,
+      width = w, height = h, units = "px", pointsize = 12,
+      bg = "white", family = "SimHei", restoreConsole = TRUE,
+      type = "windows", antialias="cleartype")
+  
+  
 }
 
