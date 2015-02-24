@@ -161,7 +161,7 @@ dr$M_B<-xdf$F100401A
 #每股收益EPS
 dr$EPS<-xdf$F020108
 #总市值
-dr$MKT_CAP<-xdf$Ysmvttl
+dr$MKT_CAP<-xdf$Ysmvttl*1000
 dr$INVEST<-xdf$C002006000
 
 
