@@ -21,13 +21,15 @@ rm(list=ls(pattern = "DIRS_"))
 
 
 require(plm)
+require(sampleSelection)
 
 DD_IDX <- arrange(dr,Stkcd,year) %>%
   group_by(Stkcd) %>%
-  mutate(EXPN=OP_COST+MGMT_EXP+SALES_EXP+IMP_LOSS,
+  mutate(EXPN=OP_COST+MGMT_EXP+SALES_EXP,
          COREREV=OP_INCOME+OP_TAX-FAIR_CH,
          EARN=(CORE_PROFIT+OP_TAX-FAIR_CH)/lag(MKT_CAP),
          # LEV=TT_LIAB/lag(MKT_CAP),
+         ATO=OP_INCOME/lag(TT_ASSET),
          LEV=DEBT_RATIO,
          SIZE=log(TT_ASSET),
          E_P=COREREV/lag(MKT_CAP),
@@ -37,7 +39,7 @@ DD_IDX <- arrange(dr,Stkcd,year) %>%
          LROA=lag(ROA),FROA=lead(ROA),LEPS=lag(EPS),FEPS=lead(EPS),
          LEARN=lag(EARN),FEARN=lead(EARN),LE_P=lag(E_P),FE_P=lead(E_P),
          LCOREREV=lag(COREREV),FCOREREV=lead(COREREV),
-         DLOSS=as.integer(COREREV<0)  ) %>%
+         DLOSS=as.integer(COREREV-OP_COST<0)  ) %>%
   winsor_df(p=0.05) %>%
   ungroup() %>%
   p_balance(id="Stkcd",from=2007,to=2013)
@@ -71,10 +73,88 @@ load("Earnings_Mangement.RData")
 MIDX<-left_join(DIDX,EM)
 
 
-fm_DD <- op_EXP  ~  LEV + SIZE + SOE  + INDCD +  MCSINDEX*DLOSS
 
-DD_DD <-lm(fm_DD,data=MIDX,na.action = na.omit)
+  FUNDH<-read.table("../HLD_Fundhold.csv",sep="\t",header = T,encoding = "UTF-8",
+                    stringsAsFactors = F) %>%
+  mutate(year=extractyear(Reptdt),Stkcd=X.U.FEFF.Stkcd) %>%
+  filter(substr(Reptdt,6,10)=="12-31") %>%
+  select(Stkcd,year,Holdperct) %>%
+  group_by(Stkcd,year) %>%
+  summarise(FUNDHD=sum(Holdperct)) %>%
+  distinct(Stkcd,year) 
 
+
+MIDX<-left_join(MIDX,FUNDH)
+
+
+
+
+#   DADT<-read.table("../FIN_Audit.csv",sep="\t",header = T,encoding = "UTF-8",stringsAsFactors = F) %>%
+#   mutate(FADT=nchar(Iadtunit),year=extractyear(Accper),
+#          Stkcd=X.U.FEFF.Stkcd) %>%
+#   select(Stkcd,year,FADT) %>%
+#   group_by(Stkcd,year) %>%
+#   summarise(FAUD=sum(FADT)) %>%
+#   distinct(Stkcd,year) %>%
+#   mutate(FADT=ifelse(FAUD>0,1,0) )
+# 
+# MIDX<-left_join(MIDX,DADT)
+
+#fm_DD <- LU_DA ~  LEV + SIZE + SOE  + INDCD +FADT
+
+#DD_DD <-lm(fm_DD,data=MIDX,na.action = na.omit)
+
+DD_DD0<-lm(LU_DA ~  LEV+ SIZE + SOE +ROA + DLOSS*MCSINDEX +INDC,data=MIDX)
+summary(DD_DD0)
+
+DD_DD <-heckit(audit_unq~ SIZE+LEV+ROA+DLOSS+ATO,  
+               LU_DA ~  LEV+ SIZE + SOE  +ROA + DLOSS*MCSINDEX+INDC ,data=MIDX)
 summary(DD_DD)
 
+DD_DD1 <-heckit(audit_unq~ SIZE+LEV+ROA+MCSINDEX+DLOSS+ATO,  
+               FUNDHD ~  LEV+ SIZE + SOE  + LU_DA*MCSINDEX ,data=MIDX)
+summary(DD_DD1)
+
+MIDX$FUNDHD[is.na(MIDX$FUNDHD)]<-0
+DD_DD3 <- lm(FUNDHD ~  LEV+ SIZE + SOE +ROA + MCSINDEX+INDCD+factor(year),data=MIDX)
+summary(DD_DD3)
+
+MIDX$FUNDHD[is.na(MIDX$FUNDHD)]<-0
+DD_DD2 <- lm(FUNDHD ~  LEV+ SIZE + SOE  + LU_DA*MCSINDEX +INDCD,data=MIDX)
+summary(DD_DD2)
+
+
+o_descriptive(as.data.frame(select(MIDX,LEV,SIZE, SOE,ROA,MCSINDEX,audit_unq,FUNDHD,DLOSS,LU_DA) ),
+              head="EM_Descriptives",file="MCS_EM_DESC.htm"
+              )
+o_corr(corr(select(MIDX,LEV,SIZE, SOE,ROA,MCSINDEX,audit_unq,FUNDHD,DLOSS,LU_DA) ),
+       head="EM_CORR",file="MCS_EM_CORR.htm"
+  )
+
+o_reg<-function(...,head="Regression Result",ylab,ctrl,ctlab,file="./reg.htm"){
+  stargazer(...,type="html",title=head,
+            report="vc*p",digits=3,
+            dep.var.labels=ylab,
+            model.names=FALSE,model.numbers=TRUE,
+            header=FALSE,
+            omit=ctrl,omit.labels=ctlab,
+            selection.equation = F,
+            flip=TRUE,out.header=TRUE,out=file)
+}
+
+o_reg(DD_DD0,head="EM_DLOSS",ylab="Discretional Accrual",
+      ctrl="INDC",ctlab="Controls",
+      file="EM_DLOSS_REG.htm")
+
+o_reg(DD_DD2,head="EM_FUNDHD",ylab="Fund Hold %",
+      ctrl="INDC",ctlab="Controls",
+      file="EM_FUNDHD_REG.htm")
+
+o_reg(DD_DD,head="EM_HECKIT",ylab="Discretional Accrual",
+      ctrl="INDC",ctlab="Controls",
+      file="EM_DLOSS_HECKIT.htm")
+
+o_reg(DD_DD1,head="FD_HECKIT",ylab="Fund Hold %",
+      ctrl="INDC",ctlab="Controls",
+      file="FUND_HECKIT.htm")
 

@@ -28,7 +28,8 @@ DD0<-p_balance(dr,"Stkcd","year",2007,2013) %>%
   arrange(Stkcd,year) %>%
   group_by(Stkcd) %>%
   mutate(TACC_TA=TT_ACCRUAL/lag(TT_ASSET),
-         ONE_TA=1/lag(TT_ASSET),
+         LTA=lag(TT_ASSET),
+         ONE_TA=1/LTA,
          DREV_TA=(CORE_INCOME-lag(CORE_INCOME))/lag(TT_ASSET),
          PPE_TA=lag(PPE_ORIG)/lag(TT_ASSET),
          REC=RECV+NOTERCV+ORCV,
@@ -86,6 +87,8 @@ EM <- filter(DD0,year>=2011) %>%
 
 summary(EM$MODI_DA)
 
+
+
 #Cross Sectional Jones Model(Lu,1997)-------
 
 
@@ -123,6 +126,10 @@ rm(list=ls(pattern="js"))
 rm(list=ls(pattern="cs"))
 summary(EM$LU_DA)
 
+o_descriptive(as.data.frame(select(EM,TACC_TA,ONE_TA,DIF_TA,PPE_TA,IAL_TA,LU_DA) ),
+              head="EM",file="LU_DA.html"
+)
+
 #Dichev and Dechow Model----------------
 
 DD<-select(DD0,Stkcd,year,DIF_WC,OP_CFLOW,TT_ASSET) %>%
@@ -158,9 +165,9 @@ summary(select(EM,DD_DA,MODI_DA,LU_DA))
 
 #Roychowdhury（2006）model-------------------------
 
-fm_cfo <- CFO_TA ~ ONE_TA + REV_TA + DREV_TA
-fm_prod <- PROD_TA ~ ONE_TA + REV_TA + DREV_TA + DDREV_TA
-fm_exp <- DISEXP_TA ~ ONE_TA + REV_TA
+fm_cfo <- CFO_TA ~ ONE_TA + REV_TA + DREV_TA +0
+fm_prod <- PROD_TA ~ ONE_TA + REV_TA + DREV_TA + DDREV_TA +0
+fm_exp <- DISEXP_TA ~ ONE_TA + REV_TA + 0
 
 R_CFO  <- group_lm(DD0,by="Stkcd",fm_cfo)
 
@@ -169,16 +176,16 @@ R_PROD <- group_lm(DD0,by="Stkcd",fm_prod)
 R_EXP <- group_lm(DD0,by="Stkcd",fm_exp)
 
 DD1<-group_lm_beta2df(DD0,R_CFO,by="Stkcd") %>%
-  mutate(op_CFO=CFO_TA- B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA-B_DREV_TA*DREV_TA) %>%
+  mutate(op_CFO=CFO_TA-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA-B_DREV_TA*DREV_TA) %>%
   select(Stkcd,year,op_CFO)
 
 DD2<-group_lm_beta2df(DD0,R_PROD,by="Stkcd") %>%
-  mutate(op_PROD=PROD_TA-B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA
+  mutate(op_PROD=PROD_TA-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA
          -B_DREV_TA*DREV_TA) %>%
   select(Stkcd,year,op_PROD)
 
 DD3<-group_lm_beta2df(DD0,R_EXP,by="Stkcd") %>%
-  mutate(op_EXP=DISEXP_TA-B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA) %>%
+  mutate(op_EXP=DISEXP_TA-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA) %>%
   select(Stkcd,year,op_EXP)
 
 EM <- left_join(EM,DD1) %>%
