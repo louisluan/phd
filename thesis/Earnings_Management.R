@@ -37,7 +37,14 @@ DD0<-p_balance(dr,"Stkcd","year",2007,2013) %>%
          DIF_TA=DREV_TA-REC_TA,
          DIF_WC=RECV-lag(RECV)+INVENTORY-lag(INVENTORY) -
            (ACC_PAYA-lag(ACC_PAYA))-(TAX_PAYA-lag(TAX_PAYA)) +
-           OTH_CURASST-lag(OTH_CURASST)
+           OTH_CURASST-lag(OTH_CURASST),
+         CFO_TA=OP_CFLOW/lag(TT_ASSET),
+         REV_TA=(CORE_INCOME)/lag(TT_ASSET),
+         COGS_TA=OP_COST/lag(TT_ASSET),
+         PROD_TA=(OP_COST+INVENTORY-lag(INVENTORY))/lag(TT_ASSET),
+         DDREV_TA=(lag(CORE_INCOME)-lag(lag(CORE_INCOME) )  )/lag(TT_ASSET),
+         DISEXP_TA=(SALES_EXP+MGMT_EXP)/lag(TT_ASSET),
+         LREV_TA=lag(CORE_INCOME)/lag(TT_ASSET)
          ) %>%
   winsor_df
   
@@ -118,14 +125,11 @@ summary(EM$LU_DA)
 
 #Dichev and Dechow Model----------------
 
-DD<-select(DD0,Stkcd,year,DIF_WC,OP_CFLOW) %>%
+DD<-select(DD0,Stkcd,year,DIF_WC,OP_CFLOW,TT_ASSET) %>%
   arrange(Stkcd,year) %>%
   group_by(Stkcd) %>%
-  mutate(F1_CFLOW=lead(OP_CFLOW),
-         L_CFLOW=lag(OP_CFLOW),
-         F_CFLOW=ifelse(is.na(F1_CFLOW),OP_CFLOW,F1_CFLOW)
-         ) %>%
-  select(-F1_CFLOW) %>%
+  mutate(F_CFLOW=lead(OP_CFLOW)/TT_ASSET,
+         L_CFLOW=lag(OP_CFLOW)/lag(TT_ASSET) ) %>%
   winsor_df
 
 fm_roll <- DIF_WC ~ F_CFLOW + OP_CFLOW + L_CFLOW + 0
@@ -150,8 +154,41 @@ EM<-left_join(EM,DD1) %>%
 summary(select(EM,DD_DA,MODI_DA,LU_DA))
 
 
+
+
+#Roychowdhury（2006）model-------------------------
+
+fm_cfo <- CFO_TA ~ ONE_TA + REV_TA + DREV_TA
+fm_prod <- PROD_TA ~ ONE_TA + REV_TA + DREV_TA + DDREV_TA
+fm_exp <- DISEXP_TA ~ ONE_TA + REV_TA
+
+R_CFO  <- group_lm(DD0,by="Stkcd",fm_cfo)
+
+R_PROD <- group_lm(DD0,by="Stkcd",fm_prod)
+
+R_EXP <- group_lm(DD0,by="Stkcd",fm_exp)
+
+DD1<-group_lm_beta2df(DD0,R_CFO,by="Stkcd") %>%
+  mutate(op_CFO=CFO_TA- B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA-B_DREV_TA*DREV_TA) %>%
+  select(Stkcd,year,op_CFO)
+
+DD2<-group_lm_beta2df(DD0,R_PROD,by="Stkcd") %>%
+  mutate(op_PROD=PROD_TA-B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA
+         -B_DREV_TA*DREV_TA) %>%
+  select(Stkcd,year,op_PROD)
+
+DD3<-group_lm_beta2df(DD0,R_EXP,by="Stkcd") %>%
+  mutate(op_EXP=DISEXP_TA-B__Intercept_-B_ONE_TA*ONE_TA-B_REV_TA*REV_TA) %>%
+  select(Stkcd,year,op_EXP)
+
+EM <- left_join(EM,DD1) %>%
+  left_join(DD2) %>%
+  left_join(DD3) %>%
+  mutate(OP_DA=op_PROD+op_EXP+op_CFO)
+
+
+#Clean up--------------------
 rm(list=ls(pattern="DD"))
 rm(list=ls(pattern="fm_"))
-
 
 save(EM,file="~/CSMAR/rdata/Earnings_Mangement.RData")

@@ -27,7 +27,8 @@ DD_IDX <- arrange(dr,Stkcd,year) %>%
   mutate(EXPN=OP_COST+MGMT_EXP+SALES_EXP+IMP_LOSS,
          COREREV=OP_INCOME+OP_TAX-FAIR_CH,
          EARN=(CORE_PROFIT+OP_TAX-FAIR_CH)/lag(MKT_CAP),
-         LEV=TT_LIAB/lag(MKT_CAP),
+        # LEV=TT_LIAB/lag(MKT_CAP),
+         LEV=DEBT_RATIO,
          SIZE=log(TT_ASSET),
          E_P=COREREV/lag(MKT_CAP),
          D=as.integer(YRET>=0),
@@ -105,7 +106,8 @@ DIDX <- mutate(DIDX,
   10*ctrl_cap + 20*mkt_inno + 20*audit_unq + 
   5*mgmt_dplm + 5*log(mgmt_exp),
   DC_MS = ntile(MCSINDEX,10),
-  DMS=DC_MS<2) %>%
+  QC_MS =ntile(MCSINDEX,5),
+  DMS=DC_MS<3) %>%
   winsor_df
 
 DIDX2011 <- filter(DIDX,year==2011) %>%
@@ -139,47 +141,86 @@ fm_lm_idx <- E_P ~    MCSINDEX   + LEV + SIZE +FY +SOE + INDCD
 LM_IDX <-plm(fm_lm_idx,data=DIDX,model="pooling",index=c("Stkcd","year"))
 summary(LM_IDX)
 
-o_descriptive(as.data.frame(select(DIDX,E_P,YRET,MCSINDEX,LEV,SIZE) ),
+o_descriptive(as.data.frame(select(DIDX,E_P,YRET,MCSINDEX,LEV,SIZE,SOE,DMS) ),
               head="MCS INDEX PERFORMANCE DESCRIPTIVES",
               file="MCS_INDEX_PERF_DESC.htm")
 
-o_corr(corr(as.matrix(select(DIDX,E_P,YRET,MCSINDEX,LEV,SIZE) ) ),
+o_corr(corr(as.matrix(select(DIDX,E_P,YRET,MCSINDEX,LEV,SIZE,SOE,DMS) ) ),
               head="MCS INDEX PERFORMANCE CORRELATION MATRIX",
               file="MCS_INDEX_PERF_CORR.htm")
 
-fm_lm_idx_r <- YRET ~    MCSINDEX   + LEV + SIZE+M_B+ INDCD 
+
+
+
+fm_lm_idx_r02 <- YRET ~    E_P   + LEV + SIZE+ M_B + INDCD
+
+LM_IDX_R02 <-lm(fm_lm_idx_r02,data=DIDX)
+summary(LM_IDX_R02)
+
+fm_lm_idx_r03 <- YRET ~    E_P*DMS   + LEV + SIZE+ M_B + INDCD
+
+LM_IDX_R03 <-lm(fm_lm_idx_r03,data=DIDX)
+summary(LM_IDX_R03)
+
+o_reg(LM_IDX_R02,LM_IDX_R03,
+      head="MCS INDEX ERC Regression Result",
+      ctrl="INDCD",ctlab="CONTROLS",
+      ylab=c("Return"),
+      file="MCS_INDEX_ERC_REG.htm"
+)
+
+
+fm_lm_idx_r <- YRET ~    MCSINDEX   + LEV + SIZE+M_B+ INDCD +SOE+E_P
 
 LM_IDX_R <-plm(fm_lm_idx_r,data=DIDX,model="pooling",index=c("Stkcd","year"))
 
-fm_lm_idx_r1 <- FYRET ~    MCSINDEX   + LEV + SIZE+ M_B+INDCD 
+fm_lm_idx_r1 <- FYRET ~    MCSINDEX   + LEV + SIZE+ M_B+INDCD +SOE+E_P
 
 LM_IDX_R1 <-plm(fm_lm_idx_r1,data=DIDX,model="pooling",index=c("Stkcd","year"))
 
-fm_lm_idx_r2 <- E_P ~    MCSINDEX   + LEV + SIZE+ INDCD 
+fm_lm_idx_r2 <- E_P ~    MCSINDEX   + LEV + SIZE+ SOE+INDCD 
 
 LM_IDX_R2 <-plm(fm_lm_idx_r2,data=DIDX,model="pooling",index=c("Stkcd","year"))
 
-fm_lm_idx_r3 <- F_E_P ~    MCSINDEX   + LEV + SIZE+ INDCD 
+fm_lm_idx_r3 <- F_E_P ~    MCSINDEX   + LEV + SIZE+ SOE+INDCD 
 
 LM_IDX_R3 <-plm(fm_lm_idx_r3,data=DIDX,model="pooling",index=c("Stkcd","year"))
 
-o_reg(LM_IDX_R,LM_IDX_R1,LM_IDX_R2,LM_IDX_R3,
+o_reg(LM_IDX_R,
       head="MCS INDEX PERFORMANCE CORRELATION Regression Result",
       ctrl="INDCD",ctlab="CONTROLS",
       ylab=c("Return t","Return t+1","Scaled Earnings t","Scaled Earnings t+1"),
-      file="MCS_INDEX_PERF_REG.htm"
+      file="MCS_INDEX_PERF_REG2.htm"
       )
 
+o_reg(LM_IDX_R2,LM_IDX_R3,
+      head="MCS INDEX PERFORMANCE CORRELATION Regression Result",
+      ctrl="INDCD",ctlab="CONTROLS",
+      ylab=c("Scaled Earnings t","Scaled Earnings t+1"),
+      file="MCS_INDEX_PERF_REG1.htm"
+)
 
+meansum<-group_by(DIDX,year,QC_MS) %>%
+  summarise(mROE=mean(ROE,na.rm=T),mE_P=mean(E_P,na.rm = T),
+          mYRET=mean(EARN,na.rm = T),
+          mMCSIDEX=mean(MCSINDEX,na.rm = T))
 
-t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2011],
-       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2011],na.rm=T)
+stargazer(as.matrix(meansum),
+              title="MCS INDEX QUINTILE DESCRIPTIVES",
+          summary=F,
+          digits=2,
+          column.sep.width ="10pt",
+          out.header=T,
+              out="MCS_INDEX_PERF_QUIN.htm")
 
-t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2012],
-       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2012],na.rm=T)
+t.test(DIDX$ROE[DIDX$QC_MS==1 & DIDX$year==2011],
+       DIDX$ROE[DIDX$QC_MS==5 & DIDX$year==2011],na.rm=T)
 
-t.test(DIDX$ROE[DIDX$DC_MS==1 & DIDX$year==2013],
-       DIDX$ROE[DIDX$DC_MS==10 & DIDX$year==2013],na.rm=T)
+t.test(DIDX$ROE[DIDX$QC_MS==1 & DIDX$year==2012],
+       DIDX$ROE[DIDX$QC_MS==5 & DIDX$year==2012],na.rm=T)
+
+t.test(DIDX$ROE[DIDX$QC_MS==1 & DIDX$year==2013],
+       DIDX$ROE[DIDX$QC_MS==5 & DIDX$year==2013],na.rm=T)
 
 
 load("Earnings_Mangement.RData")
@@ -212,13 +253,14 @@ o_corr(corr(as.matrix(select(MIDX,SOE,DLOSS,MCSINDEX,LEV,SIZE) ) ),
 # summary(MD_LD)
 fm_DD <- DD_DA  ~  LEV + SIZE + SOE  + INDCD +  MCSINDEX*DLOSS 
 
-DD_DD <-plm(fm_DD,data=MIDX,model="pooling",index=c("Stkcd","year"))
+DD_DD <-lm(fm_DD,data=MIDX,na.action = na.omit)
 
 
 fm_lu <- LU_DA  ~  LEV + SIZE + SOE  + INDCD +  MCSINDEX*DLOSS 
 
 LU_DD <-plm(fm_lu,data=MIDX,model="pooling",index=c("Stkcd","year"))
 
+summary(DD_DD)
 
 o_reg(LU_DD,DD_DD,
       head="MCS INDEX EM CORRELATION Regression Result",
