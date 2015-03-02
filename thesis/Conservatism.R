@@ -21,12 +21,12 @@ rm(list=ls(pattern = "DIRS_"))
 #Conservatism data preparation-------------
 DD <- arrange(dr,Stkcd,year) %>%
   group_by(Stkcd) %>%
-  mutate(EXPN=OP_COST+MGMT_EXP+SALES_EXP+IMP_LOSS,
-         COREREV=OP_INCOME+OP_TAX-FAIR_CH,
+  mutate(EXPN=(OP_COST+MGMT_EXP+SALES_EXP+IMP_LOSS+PPE_DEPRE+PPE_IMPM)/TT_ASSET,
+         COREREV=(OP_INCOME+OP_TAX)/TT_ASSET,
          EARN_MKT=(CORE_PROFIT+OP_TAX-FAIR_CH)/lag(MKT_CAP),
          LEV=TT_LIAB/lag(MKT_CAP),
          SIZE=log(TT_ASSET),
-         E_P=COREREV/lag(MKT_CAP),
+         E_P=DEBT_RATIO,
          D=as.integer(YRET>=0),
          L_EXPN=lag(EXPN),
          F1_EXPN=lead(EXPN),
@@ -40,13 +40,13 @@ DD <- arrange(dr,Stkcd,year) %>%
 #Matching (unconditional) conservatism---------
 
 
-fm_match <- COREREV ~ L_EXPN + EXPN + F_EXPN + 0
+fm_match <- COREREV ~ L_EXPN + EXPN + F_EXPN 
 DD1 <- select(DD,Stkcd,year,COREREV,L_EXPN,EXPN,F_EXPN )
 DD_match <- group_roll_lm(DD1,by="Stkcd",fm_match,windows = 3,align = "center")
 DD2<-group_roll_beta2df(DD1,DD_match)
 
 CS<- mutate(DD2,
-             CSMATCH=winsor(COREREV - B_L_EXPN*L_EXPN + B_EXPN*EXPN + B_F_EXPN*F_EXPN) )%>%
+             CSMATCH= B_L_EXPN )%>%
   select(Stkcd,year,CSMATCH) %>%
   arrange(Stkcd,year) %>%
   filter(year>=2011) 
@@ -57,7 +57,7 @@ fm_cs <- E_P ~ D + YRET + YRET:(SIZE + M_B + LEV) +
   I(D*YRET)+I(D*YRET):( SIZE + M_B + LEV)+
   SIZE + M_B + LEV + D:SIZE + D:M_B + D:LEV
 
-DD3<-select(DD,Stkcd,year,YRET,E_P,M_B,COREREV:D) %>%
+DD3<-select(DD,Stkcd,year,YRET,E_P,M_B,LEV:D) %>%
   filter(year>2007,E_P)
 
 
@@ -74,7 +74,7 @@ DD5<-mutate(DD4,
   select(Stkcd,year,GSCORE,CSCORE) %>%
   arrange(Stkcd,year)
  
-CS <- left_join(CS,DD5)
+CS <- left_join(CS,DD5,by=c("Stkcd","year"))
 
 
 #Core Revenue Volatility (unconditional) Model------------
@@ -85,7 +85,7 @@ DD_vol <- group_roll_func(DD6,by="Stkcd",windows = 5,align = "right",func = sd,n
 DD_volres <-group_roll_beta2df(DD6,DD_vol,windows = 5)  
 
 
-CS <- left_join(CS,DD_volres)
+CS <- left_join(CS,DD_volres,by=c("Stkcd","year"))
 
 names(CS)[7] <- "SDREV"
 
